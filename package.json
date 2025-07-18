@@ -1,6 +1,6 @@
 {
   "name": "preachpoint",
-  "version": "1.0.0",           ← note the quotes around 1.0.0 and the trailing comma
+  "version": "1.0.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
