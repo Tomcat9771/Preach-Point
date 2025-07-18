@@ -1,132 +1,229 @@
-import { useState, useEffect } from 'react'
+// src/App.jsx
+import { useState } from 'react';
+import TranslationForm from './components/TranslationForm';
 
-// List of all 66 books of the Bible
-const books = [
-  "Genesis","Exodus","Leviticus","Numbers","Deuteronomy",
-  "Joshua","Judges","Ruth","1 Samuel","2 Samuel",
-  "1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra",
-  "Nehemiah","Esther","Job","Psalms","Proverbs",
-  "Ecclesiastes","Song of Solomon","Isaiah","Jeremiah","Lamentations",
-  "Ezekiel","Daniel","Hosea","Joel","Amos","Obadiah","Jonah","Micah","Nahum","Habakkuk",
-  "Zephaniah","Haggai","Zechariah","Malachi","Matthew","Mark","Luke","John","Acts","Romans",
-  "1 Corinthians","2 Corinthians","Galatians","Ephesians","Philippians","Colossians","1 Thessalonians","2 Thessalonians",
-  "1 Timothy","2 Timothy","Titus","Philemon","Hebrews","James","1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation"
-]
+// script.js – Preach Point (fixed)
 
-// Supported translations
-const translations = [
-  { label: 'English (KJV)', value: 'kjv' },
-  { label: 'Afrikaans (Afr1953)', value: 'afr1953' }
-]
 
-// helper to make [1,2,…n]
-const range = n => Array.from({ length: n }, (_, i) => i + 1)
+// === Data for all the dropdowns ===
+const books = {
+  en: ["Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth",
+       "1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra",
+       "Nehemiah","Esther","Job","Psalms","Proverbs","Ecclesiastes","Song of Solomon",
+       "Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos",
+       "Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah",
+       "Malachi","Matthew","Mark","Luke","John","Acts","Romans","1 Corinthians",
+       "2 Corinthians","Galatians","Ephesians","Philippians","Colossians","1 Thessalonians",
+       "2 Thessalonians","1 Timothy","2 Timothy","Titus","Philemon","Hebrews","James",
+       "1 Peter","2 Peter","1 John","2 John","3 John","Jude","Revelation"],
+  af: ["Genesis","Eksodus","Levitikus","Numeri","Deuteronomium","Josua","Rigters","Rut",
+       "1 Samuel","2 Samuel","1 Konings","2 Konings","1 Kronieke","2 Kronieke","Esra",
+       "Nehemia","Esther","Job","Psalms","Spreuke","Prediker","Hooglied","Jesaja",
+       "Jeremia","Klaagliedere","Esegiel","Daniël","Hosëa","Joël","Amos","Obadja",
+       "Jona","Miga","Nahum","Habakkuk","Sefanja","Haggai","Sagaria","Maleagi",
+       "Matteus","Markus","Lukas","Johannes","Handelinge","Romeine","1 Korintiërs",
+       "2 Korintiërs","Galasiërs","Efe­siërs","Filippense","Kolossense","1 Tessalonisense",
+       "2 Tessalonisense","1 Timoteus","2 Timoteus","Titus","Filemon","Hebreërs",
+       "Jakobus","1 Petrus","2 Petrus","1 Johannes","2 Johannes","3 Johannes","Judas","Openbaring"]
+};
+const toneOptions = {
+  en: ["Teaching","Encouragement","Evangelism"],
+  af: ["Onderrig","Aanmoediging","Evangelies"]
+};
+const levelOptions = {
+  en: ["Short","Sermon-Style","Full Commentary"],
+  af: ["Kort","Preek-Styl","Volledige Kommentaar"]
+};
+const labels = {
+  en: { lang:"Language", book:"Book", chapter:"Start Chapter", verse:"Start Verse", endChapter:"End Chapter", endVerse:"End Verse", tone:"Tone", level:"Explanation Level" },
+  af: { lang:"Taal", book:"Boek", chapter:"Begin Hoofstuk", verse:"Begin Vers", endChapter:"Eind Hoofstuk", endVerse:"Eind Vers", tone:"Toon", level:"Uitlegvlak" }
+};
+const buttonLabels = {
+  en: { generate:"Generate Commentary", copy:"Copy to Clipboard", pdf:"Download as PDF" },
+  af: { generate:"Genereer Kommentaar", copy:"Kopieer na klembord", pdf:"Laai af as PDF" }
+};
+const headingLabels = {
+  en: { verses:"Bible Text", commentary:"Commentary" },
+  af: { verses:"Bybelteks", commentary:"Kommentaar" }
+};
 
-export default function App() {
-  const [translation, setTranslation] = useState(translations[0].value)
-  const [book, setBook] = useState(books[0])
-  const [chapter, setChapter] = useState(1)
-  const [startVerse, setStartVerse] = useState(1)
-  const [endVerse, setEndVerse] = useState(3)
-  const [passage, setPassage] = useState('')
-  const [loading, setLoading] = useState(false)
+function $(id) { return document.getElementById(id); }
 
-  const fetchPassage = async e => {
-    e.preventDefault()
-    setLoading(true)
-    setPassage('')
-    try {
-      const res = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ translation, book, chapter, startVerse, endVerse })
-      })
-      const { translation: text } = await res.json()
-      setPassage(text)
-    } catch (err) {
-      console.error(err)
-      setPassage('Error fetching passage.')
-    } finally {
-      setLoading(false)
-    }
+// Initialize UI
+window.addEventListener('DOMContentLoaded', () => {
+  updateUI();
+  $('lang').addEventListener('change', updateUI);
+  $('book').addEventListener('change', populateChapters);
+  $('chapter').addEventListener('change', populateVerses);
+  $('generate-btn').addEventListener('click', onGenerate);
+  $('copy-btn').addEventListener('click', onCopy);
+  $('download-pdf').addEventListener('click', onDownloadPDF);
+});
+
+function updateUI() {
+  const loc = $('lang').value;
+  const L = labels[loc] || labels.en;
+  $('lang-label').textContent        = L.lang;
+  $('book-label').textContent        = L.book;
+  $('chapter-label').textContent     = L.chapter;
+  $('verse-label').textContent       = L.verse;
+  $('end-chapter-label').textContent = L.endChapter;
+  $('end-verse-label').textContent   = L.endVerse;
+  $('tone-label').textContent        = L.tone;
+  $('level-label').textContent       = L.level;
+  updateButtonsAndHeadings(loc);
+  populateBooks();
+  populateChapters();
+  populateVerses();
+  populateTone();
+  populateLevels();
+}
+
+function populateBooks() {
+  const loc = $('lang').value;
+  const sel = $('book');
+  sel.innerHTML = '';
+  sel.append(new Option('---',''));
+  books[loc].forEach((b,i) => sel.append(new Option(b,i+1)));
+}
+
+async function populateChapters() {
+  const loc = $('lang').value;
+  const idx = parseInt($('book').value,10)-1;
+  const sel0 = $('chapter'), sel1 = $('end-chapter');
+  sel0.innerHTML = '';
+  sel1.innerHTML = '';
+  sel0.append(new Option(labels[loc].chapter,''));
+  sel1.append(new Option(labels[loc].endChapter,''));
+  if (idx<0) return;
+  const bookName = books.en[idx];
+  const res = await fetch(`/api/chapters?book=${encodeURIComponent(bookName)}`);
+  const js = await res.json();
+  js.chapters.forEach(num => {
+    sel0.append(new Option(num,num));
+    sel1.append(new Option(num,num));
+  });
+}
+
+async function populateVerses() {
+  const loc = $('lang').value;
+  const idx = parseInt($('book').value,10)-1;
+  const chap = $('chapter').value;
+  const sel0 = $('verse'), sel1 = $('end-verse');
+  sel0.innerHTML = '';
+  sel1.innerHTML = '';
+  sel0.append(new Option(labels[loc].verse,''));
+  sel1.append(new Option(labels[loc].endVerse,''));
+  if (idx<0 || !chap) return;
+  const bookName = books.en[idx];
+  const res = await fetch(`/api/versesCount?book=${encodeURIComponent(bookName)}&chapter=${chap}`);
+  const js = await res.json();
+  js.verses.forEach(num => {
+    sel0.append(new Option(num,num));
+    sel1.append(new Option(num,num));
+  });
+}
+
+function populateTone() {
+  const loc = $('lang').value;
+  const sel = $('tone');
+  sel.innerHTML = '';
+  toneOptions[loc].forEach(o => sel.append(new Option(o,o.toLowerCase())));
+}
+
+function populateLevels() {
+  const loc = $('lang').value;
+  const sel = $('level');
+  sel.innerHTML = '';
+  levelOptions[loc].forEach(o => sel.append(new Option(o,o.toLowerCase().replace(/\s+/g,'-'))));
+}
+
+function updateButtonsAndHeadings(loc) {
+  $('generate-btn').textContent  = buttonLabels[loc].generate;
+  $('copy-btn').textContent      = buttonLabels[loc].copy;
+  $('download-pdf').textContent  = buttonLabels[loc].pdf;
+  $('verses-heading').textContent     = headingLabels[loc].verses;
+  $('commentary-heading').textContent = headingLabels[loc].commentary;
+}
+
+// Fetch scripture or translation with multi-chapter support
+async function fetchBibleText(bkIdx, sCh, sV, eCh, eV, lang) {
+  const bookName = books.en[bkIdx];
+  const payload = {
+    book:         bookName,
+    startChapter: sCh,
+    startVerse:   sV,
+    endChapter:   eCh||sCh,
+    endVerse:     eV||sV
+  };
+  const url = lang==='af' ? '/api/translate' : '/api/verses';
+  const res = await fetch(url, {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+  });
+  const js = await res.json();
+  if (!res.ok) throw new Error(js.error||'Fetch error');
+  return lang==='af' ? js.translation : js.text;
+}
+
+async function onGenerate() {
+  const lang  = $('lang').value;
+  const idx   = parseInt($('book').value,10)-1;
+  const sCh   = $('chapter').value;
+  const sV    = $('verse').value;
+  const eCh   = $('end-chapter').value;
+  const eV    = $('end-verse').value;
+  const tone  = $('tone').value;
+  const lvl   = $('level').value;
+
+  // Fetch and display verses
+  try {
+    const text = await fetchBibleText(idx, sCh, sV, eCh, eV, lang);
+    $('verses').textContent = text;
+  } catch(e) {
+    $('verses').textContent = `Error: ${e.message}`;
+    return;
   }
 
-  return (
-    <div className="p-6 max-w-lg mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Preach Point</h1>
-      <form onSubmit={fetchPassage} className="space-y-4">
-        <div>
-          <label className="block mb-1">Translation / Taal</label>
-          <select
-            className="w-full p-2 border rounded"
-            value={translation}
-            onChange={e => setTranslation(e.target.value)}
-          >
-            {translations.map(t => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block mb-1">Book / Boek</label>
-          <select
-            className="w-full p-2 border rounded"
-            value={book}
-            onChange={e => setBook(e.target.value)}
-          >
-            {books.map(b => <option key={b} value={b}>{b}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block mb-1">Chapter / Hoofstuk</label>
-          <select
-            className="w-full p-2 border rounded"
-            value={chapter}
-            onChange={e => setChapter(+e.target.value)}
-          >
-            {range(150).map(n => <option key={n} value={n}>{n}</option>)}
-          </select>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block mb-1">Start Verse / Begin Vers</label>
-            <select
-              className="w-full p-2 border rounded"
-              value={startVerse}
-              onChange={e => setStartVerse(+e.target.value)}
-            >
-              {range(150).map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block mb-1">End Verse / Einde Vers</label>
-            <select
-              className="w-full p-2 border rounded"
-              value={endVerse}
-              onChange={e => setEndVerse(+e.target.value)}
-            >
-              {range(150).map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-        </div>
-        <button
-          type="submit"
-          className="w-full p-2 bg-blue-600 text-white rounded disabled:opacity-50"
-          disabled={loading || endVerse < startVerse}
-        >
-          {loading ? 'Loading…' : 'Fetch Passage'}
-        </button>
-      </form>
-
-      {endVerse < startVerse && (
-        <p className="mt-2 text-red-600">End verse moet ≥ begin vers wees.</p>
-      )}
-
-      {passage && (
-        <pre className="mt-6 p-4 bg-gray-100 rounded whitespace-pre-wrap">
-          {passage}
-        </pre>
-      )}
-    </div>
-  )
+  // Generate AI commentary
+  $('commentary').textContent = 'Generating…';
+  const payload = { book: books.en[idx], startChapter: sCh, startVerse: sV, endChapter: eCh, endVerse: eV, tone, level: lvl, lang };
+  const res = await fetch('/api/commentary', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const js = await res.json();
+  $('commentary').textContent = res.ok ? js.commentary : `Error: ${js.error}`;
 }
+
+function onCopy() {
+  const loc = $('lang').value;
+  const fullText = `${labels[loc].tone}: ${$('tone').value}\n` +
+                   `${labels[loc].level}: ${$('level').value}\n\n` +
+                   `${$('verses').textContent}\n\n` +
+                   `${$('commentary').textContent}`;
+  navigator.clipboard.writeText(fullText).then(()=>alert('Copied!')).catch(e=>alert('Copy failed:'+e));
+}
+
+function onDownloadPDF() {
+  const loc  = $('lang').value;
+  const vh   = headingLabels[loc].verses;
+  const ch   = headingLabels[loc].commentary;
+  const tmp  = document.createElement('div');
+  tmp.style.padding = '40px'; tmp.style.background = 'white'; tmp.style.color = 'black';
+  tmp.innerHTML = `
+    <div style="text-align:center; margin-bottom:2rem;">
+      <img src="logo.png" style="height:30em; width:auto; margin:0 auto 1rem;"/>
+    </div>
+    <div style="text-align:center; margin-bottom:1rem; font-size:1.2em; line-height:1.1;">
+      <strong>${labels[loc].tone}:</strong> ${$('tone').value} &nbsp;&nbsp;
+      <strong>${labels[loc].level}:</strong> ${$('level').value}
+    </div>
+    <hr/>
+    <h2 style="font-size:3.6em; text-align:center;">${vh}</h2>
+    <pre style="font-size:1.1em; line-height:1.4; white-space:pre-wrap;">${$('verses').textContent}</pre>
+    <h2 style="font-size:3.6em; text-align:center;">${ch}</h2>
+    <pre style="font-size:1.1em; line-height:1.4; white-space:pre-wrap;">${$('commentary').textContent}</pre>
+  `;
+  document.body.appendChild(tmp);
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit:'pt', format:'a4' });
+  pdf.html(tmp, { x:20, y:20, width:pdf.internal.pageSize.getWidth()-40, windowWidth:document.body.scrollWidth, callback:()=>{ pdf.save('preachpoint_commentary.pdf'); document.body.removeChild(tmp); } });
+}
+
