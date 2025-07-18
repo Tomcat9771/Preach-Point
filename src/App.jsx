@@ -114,94 +114,79 @@ export default function App() {
   const HD = headingLabels[lang]
 
   return (
-    <div className="min-h-screen bg-purple-800 text-white p-6">
-      <div className="max-w-3xl mx-auto" ref={printRef}>
-        <h1 className="text-4xl font-bold mb-6">Preach Point</h1>
-        <form onSubmit={handleGenerate} className="space-y-4">
-          {/* Language */}
-          <div>
-            <label className="block mb-1">{L.lang}</label>
-            <select className="w-full p-2 rounded" value={lang} onChange={e=>setLang(e.target.value)}>
-              <option value="en">English</option>
-              <option value="af">Afrikaans</option>
-            </select>
-          </div>
-          {/* Book */}
-          <div>
-            <label className="block mb-1">{L.book}</label>
-            <select className="w-full p-2 rounded" value={bookIdx} onChange={e=>setBookIdx(e.target.value)}>
-              <option value="">---</option>
-              {booksData[lang].map((b,i)=><option key={i} value={i+1}>{b}</option>)}
-            </select>
-          </div>
-          {/* Chapters & Verses */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-1">{L.chapter}</label>
-              <select className="w-full p-2 rounded" value={chapterStart} onChange={e=>setChapterStart(e.target.value)}>
-                <option value="">{L.chapter}</option>
-                {chapters.map(n=><option key={n} value={n}>{n}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block mb-1">{L.verse}</label>
-              <select className="w-full p-2 rounded" value={verseStart} onChange={e=>setVerseStart(e.target.value)}>
-                <option value="">{L.verse}</option>
-                {verses.map(n=><option key={n} value={n}>{n}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block mb-1">{L.endChapter}</label>
-              <select className="w-full p-2 rounded" value={chapterEnd} onChange={e=>setChapterEnd(e.target.value)}>
-                <option value="">{L.endChapter}</option>
-                {chapters.map(n=><option key={n} value={n}>{n}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block mb-1">{L.endVerse}</label>
-              <select className="w-full p-2 rounded" value={verseEnd} onChange={e=>setVerseEnd(e.target.value)}>
-                <option value="">{L.endVerse}</option>
-                {verses.map(n=><option key={n} value={n}>{n}</option>)}
-              </select>
-            </div>
-          </div>
-          {/* Tone & Level */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-1">{L.tone}</label>
-              <select className="w-full p-2 rounded" value={tone} onChange={e=>setTone(e.target.value)}>
-                {toneOptions[lang].map(o=><option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block mb-1">{L.level}</label>
-              <select className="w-full p-2 rounded" value={level} onChange={e=>setLevel(e.target.value)}>
-                {levelOptions[lang].map(o=><option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-          </div>
-          {/* Generate */}
-          <button type="submit" className="w-full bg-white text-purple-800 py-2 rounded" disabled={loading||!bookIdx||!chapterStart||!verseStart||!chapterEnd||!verseEnd}>
-            {loading? 'Loading…': BTN.generate}
-          </button>
-        </form>
-        {/* Passage */}
+    <div className="container" ref={printRef}>
+      <header className="app-title">
+        <img src="/Logo.png" alt="Preach Point Logo" className="logo" />
+      </header>
+      <h1>Preach Point</h1>
+      <form onSubmit={handleGenerate}>
+        <label>{L.lang}</label>
+        <select value={lang} onChange={e=>setLang(e.target.value)}>
+          <option value="en">English</option>
+          <option value="af">Afrikaans</option>
+        </select>
+
+        <label>{L.book}</label>
+        <select value={bookIdx} onChange={e=>setBookIdx(e.target.value)}>
+          <option value="">---</option>
+          {booksData[lang].map((b,i)=><option key={i} value={i+1}>{b}</option>)}
+        </select>
+
+        <label>{L.chapter}</label>
+        <select value={chapterStart} onChange={e=>setChapterStart(e.target.value)}>
+          <option value="">{L.chapter}</option>
+          {chapters.map(n=><option key={n} value={n}>{n}</option>)}
+        </select>
+
+        <label>{L.verse}</label>
+        <select value={verseStart} onChange={e=>setVerseStart(e.target.value)}>
+          <option value="">{L.verse}</option>
+          {verses.map(n=><option key={n} value={n}>{n}</option>)}
+        </select>
+
+        <label>{L.endChapter}</label>
+        <select value={chapterEnd} onChange={e=>setChapterEnd(e.target.value)}>
+          <option value="">{L.endChapter}</option>
+          {chapters.map(n=><option key={n} value={n}>{n}</option>)}
+        </select>
+
+        <label>{L.endVerse}</label>
+        <select value={verseEnd} onChange={e=>setVerseEnd(e.target.value)}>
+          <option value="">{L.endVerse}</option>
+          {verses.map(n=><option key={n} value={n}>{n}</option>)}
+        </select>
+
+        <label>{L.tone}</label>
+        <select value={tone} onChange={e=>setTone(e.target.value)}>
+          {toneOptions[lang].map(o=><option key={o} value={o}>{o}</option>)}
+        </select>
+
+        <label>{L.level}</label>
+        <select value={level} onChange={e=>setLevel(e.target.value)}>
+          {levelOptions[lang].map(o=><option key={o} value={o}>{o}</option>)}
+        </select>
+
+        <button type="submit" disabled={loading||!bookIdx||!chapterStart||!verseStart||!chapterEnd||!verseEnd}>
+          {loading? 'Loading…': BTN.generate}
+        </button>
+      </form>
+
+      <div id="output">
         {passage && (
-          <section className="mt-6 bg-white text-black p-4 rounded">
-            <h2 className="font-semibold mb-2">{HD.verses}</h2>
-            <pre className="whitespace-pre-wrap">{passage}</pre>
-          </section>
+          <>
+            <h2>{HD.verses}</h2>
+            <div>{passage}</div>
+          </>
         )}
-        {/* Commentary & Actions */}
         {commentary && (
-          <section className="mt-4 bg-white text-black p-4 rounded">
-            <h2 className="font-semibold mb-2">{HD.commentary}</h2>
-            <pre className="whitespace-pre-wrap">{commentary}</pre>
-            <div className="mt-3 space-x-2">
-              <button onClick={handleCopy} className="px-3 py-1 bg-purple-600 text-white rounded">{BTN.copy}</button>
-              <button onClick={handleDownload} className="px-3 py-1 bg-purple-600 text-white rounded">{BTN.pdf}</button>
+          <>
+            <h2>{HD.commentary}</h2>
+            <div>{commentary}</div>
+            <div className="actions">
+              <button onClick={handleCopy}>{BTN.copy}</button>
+              <button onClick={handleDownload}>{BTN.pdf}</button>
             </div>
-          </section>
+          </>
         )}
       </div>
     </div>
