@@ -1,6 +1,6 @@
 {
   "name": "preachpoint",
-  "version": "1.0.0",
+  "version": "1.0.0",           ← note the quotes around 1.0.0 and the trailing comma
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,7 +12,11 @@
     "openai": "^5.9.1",
     "dotenv": "^17.2.0",
     "node-cache": "^5.1.2"
-    // …rest of your deps
+  },
+  "devDependencies": {
+    "vite": "^4.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@vitejs/plugin-react": "^4.0.0"
   }
 }
-
