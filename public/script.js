@@ -1,4 +1,17 @@
 // script.js – Preach Point (fixed)
+/**
+ * Fetch JSON from `url`, throwing if HTTP status is not OK,
+ * and never trying to json()–parse an HTML error page.
+ */
+async function safeFetchJson(url) {
+  const res = await fetch(url);
+  const txt = await res.text();
+  if (!res.ok) {
+    console.error('API error response:', txt);
+    throw new Error(`HTTP ${res.status}: ${txt}`);
+  }
+  return JSON.parse(txt);
+}
 
 // === Data for all the dropdowns ===
 const books = {
@@ -84,16 +97,26 @@ function populateBooks() {
 
 async function populateChapters() {
   const loc = $('lang').value;
-  const idx = parseInt($('book').value,10)-1;
+  const raw = $('book').value;
+  const idx = Number(raw) - 1;
   const sel0 = $('chapter'), sel1 = $('end-chapter');
   sel0.innerHTML = '';
   sel1.innerHTML = '';
   sel0.append(new Option(labels[loc].chapter,''));
   sel1.append(new Option(labels[loc].endChapter,''));
-  if (idx<0) return;
+  if (isNaN(idx) || idx < 0 || idx >= books.en.length) {
+  return;   // no valid book selected
   const bookName = books.en[idx];
-  const res = await fetch(`/api/chapters?book=${encodeURIComponent(bookName)}`);
-  const js = await res.json();
+    // New, safe fetch:
+  let js;
+  try {
+    js = await safeFetchJson(
+      `/api/chapters?book=${encodeURIComponent(bookName)}`
+    );
+  } catch (err) {
+    alert(`Could not load chapters: ${err.message}`);
+    return;
+  }
   js.chapters.forEach(num => {
     sel0.append(new Option(num,num));
     sel1.append(new Option(num,num));
@@ -102,14 +125,15 @@ async function populateChapters() {
 
 async function populateVerses() {
   const loc = $('lang').value;
-  const idx = parseInt($('book').value,10)-1;
+  const raw = $('book').value;
+  const idx = Number(raw) - 1;
   const chap = $('chapter').value;
   const sel0 = $('verse'), sel1 = $('end-verse');
   sel0.innerHTML = '';
   sel1.innerHTML = '';
   sel0.append(new Option(labels[loc].verse,''));
   sel1.append(new Option(labels[loc].endVerse,''));
-  if (idx<0 || !chap) return;
+  if (isNaN(idx) || !chap) return;
   const bookName = books.en[idx];
   const res = await fetch(`/api/versesCount?book=${encodeURIComponent(bookName)}&chapter=${chap}`);
   const js = await res.json();
