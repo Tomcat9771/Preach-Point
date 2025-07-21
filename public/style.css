@@ -111,5 +111,10 @@ button:hover {
     font-size: 0.9rem;
     padding: 0.5rem 1rem;
   }
+#logo {
+  max-width: 200px;  /* change 200px to whatever suits your layout */
+  width: 100%;       /* allows it to shrink below 200px on narrow viewports */
+  height: auto;      /* preserve aspect ratio */
+}
 
 }
