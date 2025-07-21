@@ -1,7 +1,6 @@
-// script.js – Preach Point (fixed)
+// ─── safeFetchJson helper ──────────────────────────────────────────
 /**
- * Fetch JSON from `url`, throwing if HTTP status is not OK,
- * and never trying to json()–parse an HTML error page.
+ * Fetches JSON or throws an error containing the raw text.
  */
 async function safeFetchJson(url) {
   const res = await fetch(url);
@@ -96,18 +95,28 @@ function populateBooks() {
 }
 
 async function populateChapters() {
-  const loc = $('lang').value;
-  const raw = $('book').value;
-  const idx = Number(raw) - 1;
-  const sel0 = $('chapter'), sel1 = $('end-chapter');
+  const loc    = $('lang').value;
+  const raw    = $('book').value;
+  const idx    = Number(raw) - 1;
+  const sel0   = $('chapter');
+  const sel1   = $('end-chapter');
+
+  // Clear out any existing options
   sel0.innerHTML = '';
   sel1.innerHTML = '';
-  sel0.append(new Option(labels[loc].chapter,''));
-  sel1.append(new Option(labels[loc].endChapter,''));
+
+  // Add the “Select chapter” placeholders
+  sel0.append(new Option(labels[loc].chapter, ''));
+  sel1.append(new Option(labels[loc].endChapter, ''));
+
+  // Bail if no valid book selected
   if (isNaN(idx) || idx < 0 || idx >= books.en.length) {
-  return;   // no valid book selected
+    return;
+  }
+
   const bookName = books.en[idx];
-    // New, safe fetch:
+
+  // Fetch chapters safely
   let js;
   try {
     js = await safeFetchJson(
@@ -117,9 +126,11 @@ async function populateChapters() {
     alert(`Could not load chapters: ${err.message}`);
     return;
   }
+
+  // Populate both start- and end-chapter selects
   js.chapters.forEach(num => {
-    sel0.append(new Option(num,num));
-    sel1.append(new Option(num,num));
+    sel0.append(new Option(num, num));
+    sel1.append(new Option(num, num));
   });
 }
 
@@ -220,22 +231,32 @@ function onCopy() {
   navigator.clipboard.writeText(fullText).then(()=>alert('Copied!')).catch(e=>alert('Copy failed:'+e));
 }
 
+/**
+ * Generates a PDF of the current commentary view.
+ */
 function onDownloadPDF() {
-  const loc = $('lang').value;
-  const vh  = headingLabels[loc].verses;
-  const ch  = headingLabels[loc].commentary;
-  const tmp = document.createElement('div');
+  const loc  = $('lang').value;
+  const vh   = headingLabels[loc].verses;
+  const ch   = headingLabels[loc].commentary;
+  const tmp  = document.createElement('div');
 
+  // Style wrapper for PDF
   tmp.style.padding    = '40px';
   tmp.style.background = 'white';
   tmp.style.color      = 'black';
 
+  // Build the HTML to render into PDF
   tmp.innerHTML = `
     <div style="text-align:center; margin-bottom:2rem;">
-      <img src="/logo.png" style="max-width:200px; height:auto; margin:0 auto 1rem;"/>
+      <img
+        src="/logo.png"
+        style="max-width:200px; height:auto; display:block; margin:0 auto 1rem;"
+        alt="Preach Point Logo"
+      />
     </div>
     <div style="text-align:center; margin-bottom:1rem; font-size:1.2em; line-height:1.1;">
-      <strong>${labels[loc].tone}:</strong> ${$('tone').value} &nbsp;&nbsp;
+      <strong>${labels[loc].tone}:</strong> ${$('tone').value}
+      &nbsp;&nbsp;
       <strong>${labels[loc].level}:</strong> ${$('level').value}
     </div>
     <hr/>
@@ -247,11 +268,12 @@ ${$('verses').textContent}
     <pre style="font-size:1.1em; line-height:1.4; white-space:pre-wrap;">
 ${$('commentary').textContent}
     </pre>
-  `;
+  `;  // <-- closing back‐tick for template literal
 
   document.body.appendChild(tmp);
+
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ unit:'pt', format:'a4' });
+  const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
 
   pdf.html(tmp, {
     x: 20,
@@ -263,4 +285,4 @@ ${$('commentary').textContent}
       document.body.removeChild(tmp);
     }
   });
-}
+}  // <-- closing brace for function
