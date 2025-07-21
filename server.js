@@ -1,4 +1,6 @@
 // server.js
+
+// ─── 0️⃣ Imports ─────────────────────────────────────────────────────────────────
 import express from 'express';
 import fs from 'fs/promises';
 import path from 'path';
@@ -7,11 +9,13 @@ import NodeCache from 'node-cache';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// ─── 1️⃣ App setup ───────────────────────────────────────────────────────────────
 const app = express();
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public'));  // serve your front-end
 
-// ─── 2️⃣ Load kjv.json once at startup ────────────────────────────
+// ─── 2️⃣ Load kjv.json once at startup ──────────────────────────────────────────
 let kjvData = [];
 try {
   const filePath = path.join(process.cwd(), 'data', 'kjv.json');
@@ -21,22 +25,53 @@ try {
   console.log(`✅ Loaded ${kjvData.length} books from data/kjv.json`);
 } catch (err) {
   console.error('❌ Failed to load data/kjv.json:', err);
-  // optional: process.exit(1);
+  // We don’t exit here—your routes will return JSON errors if kjvData is empty
 }
 
-// ─── 3️⃣ OpenAI client & cache ─────────────────────────────────────
+// ─── 3️⃣ OpenAI client & in-memory cache ────────────────────────────────────────
 const key = process.env.OPENAI_KEY ?? process.env.OPENAI_API_KEY;
 if (!key) {
-  console.error('Missing OpenAI key! Set OPENAI_KEY in env.');
+  console.error('Missing OpenAI key! Please set OPENAI_KEY in your env.');
   process.exit(1);
 }
 const openai = new OpenAI({ apiKey: key });
-const cache  = new NodeCache({ stdTTL: 86400 });
+const cache  = new NodeCache({ stdTTL: 86400 }); // cache responses for 24h
 
-// ─── 4️⃣ Helper: extractVerses(...) ───────────────────────────────
-// (your extractVerses implementation here)
+// 4️⃣ Helper: extract verses across chapters
+function extractVerses(bookName, startChap, startV, endChap, endV) {
+  const bookObj = kjvData.find(b => b.name === bookName);
+  if (!bookObj) throw new Error(`Book "${bookName}" not found`);
 
-// ─── 5️⃣ GET /api/chapters ────────────────────────────────────────
+  const sC = Number(startChap), eC = Number(endChap);
+  const sV = Number(startV), eV = Number(endV);
+  const lines = [];
+
+  for (let chap = sC; chap <= eC; chap++) {
+    const chapObj = bookObj.chapters.find(c => c.chapter === chap);
+    if (!chapObj) throw new Error(`Chapter "${chap}" not found in ${bookName}`);
+
+    const verses = chapObj.verses.filter(v => {
+      if (sC === eC) {
+        return v.verse >= sV && v.verse <= eV;
+      } else if (chap === sC) {
+        return v.verse >= sV;
+      } else if (chap === eC) {
+        return v.verse <= eV;
+      } else {
+        return true;
+      }
+    });
+
+    verses.forEach(v => lines.push(`${chap}:${v.verse} ${v.text}`));
+  }
+
+  if (lines.length === 0) {
+    throw new Error(`No verses found in range ${startChap}:${startV}–${endChap}:${endV}`);
+  }
+
+  return lines.join('\n');
+}
+// ─── 5️⃣ GET /api/chapters ─────────────────────────────────────────────────────
 app.get('/api/chapters', (req, res) => {
   try {
     const book = req.query.book;
@@ -53,6 +88,7 @@ app.get('/api/chapters', (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // 6️⃣ Endpoint: get verses count for a chapter
 app.get('/api/versesCount', (req, res) => {
@@ -157,13 +193,13 @@ app.post('/api/commentary', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// ─── Global error handler ────────────────────────────────────────
+// ─── Global error handler ───────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ─── 🔟 Launch server ─────────────────────────────────────────────
+// ─── 🔟 Launch server ───────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Preach Point server listening on http://localhost:${PORT}`);
