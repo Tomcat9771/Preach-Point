@@ -221,14 +221,18 @@ function onCopy() {
 }
 
 function onDownloadPDF() {
-  const loc  = $('lang').value;
-  const vh   = headingLabels[loc].verses;
-  const ch   = headingLabels[loc].commentary;
-  const tmp  = document.createElement('div');
-  tmp.style.padding = '40px'; tmp.style.background = 'white'; tmp.style.color = 'black';
+  const loc = $('lang').value;
+  const vh  = headingLabels[loc].verses;
+  const ch  = headingLabels[loc].commentary;
+  const tmp = document.createElement('div');
+
+  tmp.style.padding    = '40px';
+  tmp.style.background = 'white';
+  tmp.style.color      = 'black';
+
   tmp.innerHTML = `
     <div style="text-align:center; margin-bottom:2rem;">
-      <img src="logo.png" style="height:30em; width:auto; margin:0 auto 1rem;"/>
+      <img src="/logo.png" style="max-width:200px; height:auto; margin:0 auto 1rem;"/>
     </div>
     <div style="text-align:center; margin-bottom:1rem; font-size:1.2em; line-height:1.1;">
       <strong>${labels[loc].tone}:</strong> ${$('tone').value} &nbsp;&nbsp;
@@ -236,12 +240,27 @@ function onDownloadPDF() {
     </div>
     <hr/>
     <h2 style="font-size:3.6em; text-align:center;">${vh}</h2>
-    <pre style="font-size:1.1em; line-height:1.4; white-space:pre-wrap;">${$('verses').textContent}</pre>
+    <pre style="font-size:1.1em; line-height:1.4; white-space:pre-wrap;">
+${$('verses').textContent}
+    </pre>
     <h2 style="font-size:3.6em; text-align:center;">${ch}</h2>
-    <pre style="font-size:1.1em; line-height:1.4; white-space:pre-wrap;">${$('commentary').textContent}</pre>
+    <pre style="font-size:1.1em; line-height:1.4; white-space:pre-wrap;">
+${$('commentary').textContent}
+    </pre>
   `;
+
   document.body.appendChild(tmp);
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ unit:'pt', format:'a4' });
-  pdf.html(tmp, { x:20, y:20, width:pdf.internal.pageSize.getWidth()-40, windowWidth:document.body.scrollWidth, callback:()=>{ pdf.save('preachpoint_commentary.pdf'); document.body.removeChild(tmp); } });
+
+  pdf.html(tmp, {
+    x: 20,
+    y: 20,
+    width: pdf.internal.pageSize.getWidth() - 40,
+    windowWidth: document.body.scrollWidth,
+    callback: () => {
+      pdf.save('preachpoint_commentary.pdf');
+      document.body.removeChild(tmp);
+    }
+  });
 }
