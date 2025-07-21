@@ -31,12 +31,15 @@ font-size: 2.5rem;
   max-height: 180px;    /* limits the header’s height */
   overflow: hidden;     /* prevents the logo from pushing it taller */
 }
-
-.app-title .logo {
-  height: 25em;              /* exactly the same as the line-height/font-size */
-  width: auto;              /* preserve aspect ratio */
+/* Constrain your logo to fit within the header */
+#logo {
+  /* max height = header’s max-height minus a little padding */
+   max-height: 150px;     /* tweak this value as needed */
+   height: auto;          /* keep aspect ratio */
+   width: auto;           /* allow it to scale */
+   display: block;        /* remove any inline-img whitespace */
+   margin: 0 auto;        /* center */
 }
-
 label {
   display: block;
   margin-top: 1rem;
@@ -111,10 +114,5 @@ button:hover {
     font-size: 0.9rem;
     padding: 0.5rem 1rem;
   }
-#logo {
-  max-width: 100px;  /* change 200px to whatever suits your layout */
-  width: 50%;       /* allows it to shrink below 200px on narrow viewports */
-  height: auto;      /* preserve aspect ratio */
-}
 
 }
