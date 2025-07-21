@@ -1,6 +1,7 @@
 // server.js
 import express from 'express';
 import fs from 'fs/promises';
+import path from 'path';
 import { OpenAI } from 'openai';
 import NodeCache from 'node-cache';
 import dotenv from 'dotenv';
@@ -8,72 +9,49 @@ import dotenv from 'dotenv';
 dotenv.config();
 const app = express();
 app.use(express.json());
-
-// 1️⃣ Serve all front-end assets from './public'
 app.use(express.static('public'));
 
-// 2️⃣ Load kjv.json once at startup
-let kjvData;
-(async () => {
-  try {
-    const raw = await fs.readFile('public/kjv.json', 'utf8');
-    const parsed = JSON.parse(raw);
-    // Expecting { books: [ { name, chapters: [ { chapter, verses: [ { verse, text } ] } ] } ] }
-    kjvData = parsed.books;
-    console.log(`✅ Loaded ${kjvData.length} books from kjv.json`);
-  } catch (err) {
-    console.error('Failed to load kjv.json:', err);
-    process.exit(1);
-  }
-})();
-
-// 3️⃣ OpenAI client & in-memory cache
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const cache   = new NodeCache({ stdTTL: 86400 }); // cache for 24h
-
-// 4️⃣ Helper: extract verses across chapters
-function extractVerses(bookName, startChap, startV, endChap, endV) {
-  const bookObj = kjvData.find(b => b.name === bookName);
-  if (!bookObj) throw new Error(`Book "${bookName}" not found`);
-
-  const sC = Number(startChap), eC = Number(endChap);
-  const sV = Number(startV), eV = Number(endV);
-  const lines = [];
-
-  for (let chap = sC; chap <= eC; chap++) {
-    const chapObj = bookObj.chapters.find(c => c.chapter === chap);
-    if (!chapObj) throw new Error(`Chapter "${chap}" not found in ${bookName}`);
-
-    const verses = chapObj.verses.filter(v => {
-      if (sC === eC) {
-        return v.verse >= sV && v.verse <= eV;
-      } else if (chap === sC) {
-        return v.verse >= sV;
-      } else if (chap === eC) {
-        return v.verse <= eV;
-      } else {
-        return true;
-      }
-    });
-
-    verses.forEach(v => lines.push(`${chap}:${v.verse} ${v.text}`));
-  }
-
-  if (lines.length === 0) {
-    throw new Error(`No verses found in range ${startChap}:${startV}–${endChap}:${endV}`);
-  }
-
-  return lines.join('\n');
+// ─── 2️⃣ Load kjv.json once at startup ────────────────────────────
+let kjvData = [];
+try {
+  const filePath = path.join(process.cwd(), 'data', 'kjv.json');
+  const raw      = await fs.readFile(filePath, 'utf8');
+  const parsed   = JSON.parse(raw);
+  kjvData = parsed.books;
+  console.log(`✅ Loaded ${kjvData.length} books from data/kjv.json`);
+} catch (err) {
+  console.error('❌ Failed to load data/kjv.json:', err);
+  // optional: process.exit(1);
 }
 
-// 5️⃣ Endpoint: get chapters count
+// ─── 3️⃣ OpenAI client & cache ─────────────────────────────────────
+const key = process.env.OPENAI_KEY ?? process.env.OPENAI_API_KEY;
+if (!key) {
+  console.error('Missing OpenAI key! Set OPENAI_KEY in env.');
+  process.exit(1);
+}
+const openai = new OpenAI({ apiKey: key });
+const cache  = new NodeCache({ stdTTL: 86400 });
+
+// ─── 4️⃣ Helper: extractVerses(...) ───────────────────────────────
+// (your extractVerses implementation here)
+
+// ─── 5️⃣ GET /api/chapters ────────────────────────────────────────
 app.get('/api/chapters', (req, res) => {
-  const book = req.query.book;
-  if (!book) return res.status(400).json({ error: 'Missing book parameter' });
-  const bookObj = kjvData.find(b => b.name === book);
-  if (!bookObj) return res.status(400).json({ error: `Book ${book} not found` });
-  const chapters = bookObj.chapters.map(c => c.chapter);
-  res.json({ chapters });
+  try {
+    const book = req.query.book;
+    if (!book) {
+      return res.status(400).json({ error: 'Missing book parameter' });
+    }
+    const bookObj = kjvData.find(b => b.name === book);
+    if (!bookObj) {
+      return res.status(404).json({ error: `Book not found: ${book}` });
+    }
+    return res.json({ chapters: bookObj.chapters.map(c => c.chapter) });
+  } catch (err) {
+    console.error('Error in GET /api/chapters:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // 6️⃣ Endpoint: get verses count for a chapter
@@ -179,8 +157,13 @@ app.post('/api/commentary', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// ─── Global error handler ────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
-// 🔟 Launch server
+// ─── 🔟 Launch server ─────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Preach Point server listening on http://localhost:${PORT}`);
