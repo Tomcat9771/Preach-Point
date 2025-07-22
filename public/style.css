@@ -104,18 +104,18 @@ button:hover {
 /* ─── Loading Spinner ──────────────────────────────────────────── */
 .spinner--dual-ring {
   display: block;
-  width: 64px;
-  height: 64px;
-  margin: 2rem auto;
+  width: 32px;           /* was 64px */
+  height: 32px;          /* was 64px */
+  margin: 1rem auto;     /* half the vertical space */
 }
 .spinner--dual-ring:after {
-  content: " ";
+  content: "";
   display: block;
-  width: 48px;
-  height: 48px;
-  margin: 8px;
+  width: 24px;           /* was 48px */
+  height: 24px;          /* was 48px */
+  margin: 4px;           /* was 8px */
   border-radius: 50%;
-  border: 6px solid #f3f3f3;
+  border: 3px solid #f3f3f3;                  /* was 6px */
   border-color: #f3f3f3 #f3f3f3 #007bff #007bff;
   animation: dual-ring 1.2s linear infinite;
 }
