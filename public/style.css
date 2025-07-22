@@ -103,22 +103,22 @@ button:hover {
 }
 /* ─── Loading Spinner ──────────────────────────────────────────── */
 .spinner--dual-ring {
-  display: block;
-  width: 32px;           /* was 64px */
-  height: 32px;          /* was 64px */
-  margin: 1rem auto;     /* half the vertical space */
-}
+    display: block;
+  width: 16px;           /* now half of 32px */
+  height: 16px;          /* now half of 32px */
+  margin: 0.5rem auto;   /* half of previous 1rem */
+ }
 .spinner--dual-ring:after {
-  content: "";
+    content: "";
   display: block;
-  width: 24px;           /* was 48px */
-  height: 24px;          /* was 48px */
-  margin: 4px;           /* was 8px */
+  width: 12px;           /* half of 24px */
+  height: 12px;          /* half of 24px */
+  margin: 2px;           /* half of 4px */
   border-radius: 50%;
-  border: 3px solid #f3f3f3;                  /* was 6px */
+  border: 2px solid #f3f3f3;                  /* reduced a bit for visibility */
   border-color: #f3f3f3 #f3f3f3 #007bff #007bff;
   animation: dual-ring 1.2s linear infinite;
-}
+ }
 
 @keyframes dual-ring {
   to { transform: rotate(360deg); }
