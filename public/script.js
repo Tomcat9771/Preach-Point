@@ -144,6 +144,17 @@ function populateLevels() {
     sel.append(new Option(o, o.toLowerCase().replace(/\s+/g,'-')))
   );
 }
+/**
+ * Syncs button text and section headings to the selected language.
+ */
+function updateButtonsAndHeadings(loc) {
+  // buttonLabels and headingLabels are your globals defined earlier
+  $('generate-btn').textContent      = buttonLabels[loc].generate;
+  $('copy-btn').textContent          = buttonLabels[loc].copy;
+  $('download-pdf').textContent      = buttonLabels[loc].pdf;
+  $('verses-heading').textContent     = headingLabels[loc].verses;
+  $('commentary-heading').textContent = headingLabels[loc].commentary;
+}
 
 // ─── Update all labels, then repopulate dropdowns ───────────────
 function updateUI() {
