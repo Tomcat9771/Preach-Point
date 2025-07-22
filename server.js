@@ -88,6 +88,12 @@ app.get('/api/chapters', (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
+// 5.5️⃣ GET /api/books
+app.get('/api/books', (req, res) => {
+  // send back exactly the names your JSON uses
+  const names = kjvData.map(b => b.name);
+  res.json({ books: names });
+});
 
 
 // 6️⃣ Endpoint: get verses count for a chapter
