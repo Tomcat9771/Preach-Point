@@ -239,8 +239,8 @@ async function onGenerate() {
   }
 
   // ① Show spinners
-  $('verses').innerHTML     = '<div class="spinner--dual-ring"></div>';
-  $('commentary').innerHTML = '<div class="spinner--dual-ring"></div>';
+  $('verses').innerHTML     = '<div class="spinner spinner--dual-ring"></div>';
+  $('commentary').innerHTML = '<div class="spinner spinner--dual-ring"></div>';
 
   // ② Fetch & render verses (or translation)
   try {
@@ -261,8 +261,7 @@ async function onGenerate() {
 
   // ③ Fetch & render AI commentary
   // keep showing the spinner until the commentary comes back
-  $('commentary').innerHTML = '<div class="spinner"></div>';
-  try {
+    try {
     const payload2 = { book: bookName, startChapter: sCh, startVerse: sV, endChapter: eCh, endVerse: eV, tone, level: lvl, lang };
     const res2     = await fetch('/api/commentary', {
       method: 'POST',
