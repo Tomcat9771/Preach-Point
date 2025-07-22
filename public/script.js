@@ -361,5 +361,4 @@ async function onDownloadPDF() {
 
   // 6️⃣ Save
   doc.save('preachpoint_commentary.pdf');
-}
 }  // <-- closing brace for function
