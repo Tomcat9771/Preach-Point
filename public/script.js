@@ -238,16 +238,20 @@ async function onGenerate() {
     return;
   }
 
-  // Fetch & render verses (or translation)
+  // ① Show spinners
+  $('verses').innerHTML     = '<div class="spinner"></div>';
+  $('commentary').innerHTML = '<div class="spinner"></div>';
+
+  // ② Fetch & render verses (or translation)
   try {
-    const url = lang === 'af' ? '/api/translate' : '/api/verses';
+    const url     = lang === 'af' ? '/api/translate' : '/api/verses';
     const payload = { book: bookName, startChapter: sCh, startVerse: sV, endChapter: eCh, endVerse: eV };
-    const res = await fetch(url, {
+    const res     = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
       body: JSON.stringify(payload)
     });
-    const js = await res.json();
+    const js      = await res.json();
     if (!res.ok) throw new Error(js.error || 'Fetch error');
     $('verses').textContent = lang === 'af' ? js.translation : js.text;
   } catch (e) {
@@ -255,16 +259,16 @@ async function onGenerate() {
     return;
   }
 
-  // Fetch & render AI commentary
-  $('commentary').textContent = 'Generating…';
+  // ③ Fetch & render AI commentary
+  $('commentary').textContent = ''; // ensure spinner remains until ready
   try {
-    const payload = { book: bookName, startChapter: sCh, startVerse: sV, endChapter: eCh, endVerse: eV, tone, level: lvl, lang };
-    const res2 = await fetch('/api/commentary', {
+    const payload2 = { book: bookName, startChapter: sCh, startVerse: sV, endChapter: eCh, endVerse: eV, tone, level: lvl, lang };
+    const res2     = await fetch('/api/commentary', {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload2)
     });
-    const js2 = await res2.json();
+    const js2      = await res2.json();
     if (!res2.ok) throw new Error(js2.error || 'Commentary error');
     $('commentary').textContent = js2.commentary;
   } catch (e) {
