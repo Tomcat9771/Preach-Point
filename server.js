@@ -199,6 +199,39 @@ app.post('/api/commentary', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.post('/api/prayer', async (req, res) => {
+  try {
+    const { book, startChapter, startVerse, endChapter, endVerse, lang } = req.body;
+    if (!book || !startChapter || !startVerse) {
+      return res.status(400).json({ error: 'Missing required parameters' });
+    }
+    const scripture = extractVerses(
+      book,
+      startChapter,
+      startVerse,
+      endChapter || startChapter,
+      endVerse   || startVerse
+    );
+    const langLabel = lang === 'af' ? 'Afrikaans' : 'English';
+    const passageRef = `${book} ${startChapter}:${startVerse}-${endChapter || startChapter}:${endVerse || startVerse}`;
+    const prompt = `Here are the verses (${passageRef}):\n${scripture}\n\n` +
+                   `Please write a ${langLabel} prayer relevant to these verses.`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: 'You are a compassionate prayer assistant.' },
+        { role: 'user',   content: prompt }
+      ],
+      temperature: 0.7
+    });
+
+    res.json({ prayer: completion.choices[0].message.content.trim() });
+  } catch (err) {
+    console.error('Error in /api/prayer:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 // ─── Global error handler ───────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);

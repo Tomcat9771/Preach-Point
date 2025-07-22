@@ -49,8 +49,8 @@ const buttonLabels = {
   }
  };
 const headingLabels = {
-  en: { verses:"Bible Text", commentary:"Commentary" },
-  af: { verses:"Bybelteks", commentary:"Kommentaar" }
+  en: { verses: "Bible Text", commentary: "Commentary", prayer: "Prayer" },
+  af: { verses: "Bybelteks", commentary: "Kommentaar", prayer: "Gebed" }
 };
 
 // shorthand for document.getElementById
@@ -170,6 +170,7 @@ function updateButtonsAndHeadings(loc) {
   $('download-pdf').textContent      = buttonLabels[loc].pdf;
   $('verses-heading').textContent     = headingLabels[loc].verses;
   $('commentary-heading').textContent = headingLabels[loc].commentary;
+  $('prayer-heading').textContent = headingLabels[loc].prayer;
 }
 
 // ─── Update all labels, then repopulate dropdowns ───────────────
@@ -241,6 +242,7 @@ async function onGenerate() {
   // ① Show spinners
   $('verses').innerHTML     = '<div class="spinner spinner--dual-ring"></div>';
   $('commentary').innerHTML = '<div class="spinner spinner--dual-ring"></div>';
+  $('prayer').innerHTML     = '<div class="spinner spinner--dual-ring"></div>';
 
   // ② Fetch & render verses (or translation)
   try {
@@ -275,6 +277,27 @@ async function onGenerate() {
     $('commentary').textContent = `Error: ${e.message}`;
   }
 }
+// ④ Fetch & render AI prayer
+  try {
+    const payload3 = {
+      book:           bookName,
+      startChapter:   sCh,
+      startVerse:     sV,
+      endChapter:     eCh,
+      endVerse:       eV,
+      lang
+    };
+    const res3 = await fetch('/api/prayer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload3)
+    });
+    const js3 = await res3.json();
+    if (!res3.ok) throw new Error(js3.error || 'Prayer error');
+    $('prayer').textContent = js3.prayer;
+  } catch (e) {
+    $('prayer').textContent = `Error: ${e.message}`;
+  }
 
 // ─── Copy to clipboard helper ────────────────────────────────────
 function onCopy() {
