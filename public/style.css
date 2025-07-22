@@ -102,21 +102,27 @@ button:hover {
   text-align: center;          /* center the label text */
 }
 /* ─── Loading Spinner ──────────────────────────────────────────── */
-.spinner {
+.spinner--dual-ring {
   display: block;
-  width: 40px;
-  height: 40px;
-  margin: 2rem auto;            /* center vertically with space */
-  border: 4px solid #f3f3f3;    /* light grey */
-  border-top: 4px solid #007bff;/* blue accent */
-  border-radius: 50%;           /* circle */
-  animation: spin 1s linear infinite;
+  width: 64px;
+  height: 64px;
+  margin: 2rem auto;
+}
+.spinner--dual-ring:after {
+  content: " ";
+  display: block;
+  width: 48px;
+  height: 48px;
+  margin: 8px;
+  border-radius: 50%;
+  border: 6px solid #f3f3f3;
+  border-color: #f3f3f3 #f3f3f3 #007bff #007bff;
+  animation: dual-ring 1.2s linear infinite;
 }
 
-@keyframes spin {
+@keyframes dual-ring {
   to { transform: rotate(360deg); }
 }
-
 @media (max-width: 600px) {
   body {
     padding: 1rem;
