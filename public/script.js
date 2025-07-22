@@ -203,6 +203,7 @@ function onReset() {
   $('verses').textContent     = '';
   $('commentary').textContent = '';
   $('prayer').textContent     = '';
+  $('prayer').textContent     = '';
 
   // 3) (Optional) Repopulate tone & level to defaults for current language
   populateTone();
