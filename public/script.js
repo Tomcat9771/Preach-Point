@@ -273,44 +273,61 @@ async function onGenerate() {
     });
     const js2      = await res2.json();
     if (!res2.ok) throw new Error(js2.error || 'Commentary error');
-    $('commentary').textContent = js2.commentary;
+       let commentaryText = js2.commentary;
+   // In Afrikaans, replace any leading "Conclusie" with "Slotopmerkings"
+   if (lang === 'af') {
+     commentaryText = commentaryText.replace(
+       /^Conclusie\b/, 
+       'Gevolgtrekking'
+     );
+   }
+   $('commentary').textContent = commentaryText;
   } catch (e) {
     $('commentary').textContent = `Error: ${e.message}`;
   }
 
 // ④ Fetch & render AI prayer
-  try {
-    const payload3 = {
-      book:           bookName,
-      startChapter:   sCh,
-      startVerse:     sV,
-      endChapter:     eCh,
-      endVerse:       eV,
-      lang
-    };
-    const res3 = await fetch('/api/prayer', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload3)
-    });
-    const js3 = await res3.json();
-    if (!res3.ok) throw new Error(js3.error || 'Prayer error');
-    $('prayer').textContent = js3.prayer;
-  } catch (e) {
-    $('prayer').textContent = `Error: ${e.message}`;
+try {
+  const res3 = await fetch('/api/prayer', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ book: bookName, startChapter: sCh, startVerse: sV, endChapter: eCh, endVerse: eV, lang })
+  });
+  const js3 = await res3.json();
+  if (!res3.ok) throw new Error(js3.error || 'Prayer error');
+
+  // Localize the intro line:
+  let prayerText = js3.prayer;
+  if (lang === 'af') {
+    // Afrikaans intro
+    prayerText = 
+      "Hier is ’n Afrikaanse gebed geïnspireer deur die verse:\n\n" +
+      prayerText;
+  } else {
+    // English intro
+    prayerText = 
+      "Here is a prayer inspired by the verses:\n\n" +
+      prayerText;
   }
+
+  $('prayer').textContent = prayerText;
+} catch (e) {
+  $('prayer').textContent = `Error: ${e.message}`;
+}
 }
 // ─── Copy to clipboard helper ────────────────────────────────────
 function onCopy() {
   const loc = $('lang').value;
-  const text = `${labels[loc].tone}: ${$('tone').value}\n` +
-               `${labels[loc].level}: ${$('level').value}\n\n` +
-               $('verses').textContent + '\n\n' +
-               $('commentary').textContent;
-  navigator.clipboard.writeText(text)
-    .then(() => alert('Copied!'))
-    .catch(e => alert('Copy failed:'+e));
-}
+  const text = 
+    `${labels[loc].tone}: ${$('tone').value}\n` +
+    `${labels[loc].level}: ${$('level').value}\n\n` +
+    `${headingLabels[loc].verses}:\n${$('verses').textContent}\n\n` +
+    `${headingLabels[loc].commentary}:\n${$('commentary').textContent}\n\n` +
+    `${headingLabels[loc].prayer}:\n${$('prayer').textContent}`;
+   navigator.clipboard.writeText(text)
+     .then(() => alert('Copied!'))
+     .catch(e => alert('Copy failed:'+e));
+ }
 
 // ─── Your existing onDownloadPDF (unchanged) ────────────────────
 
@@ -382,6 +399,23 @@ async function onDownloadPDF() {
       cursorY = 40;
     }
   });
+  // 6️⃣ Prayer section
+  cursorY += 20;
+  doc.setFont('helvetica', 'bold').setFontSize(12);
+  doc.text(headingLabels[loc].prayer, pageW/2, cursorY, { align: 'center' });
+  cursorY += 20;
+  doc.setFont('helvetica', 'normal').setFontSize(11);
+  const pray = $('prayer').textContent.split('\n');
+  pray.forEach(line => {
+    const lines = doc.splitTextToSize(line, pageW - 80);
+    doc.text(lines, 40, cursorY);
+    cursorY += lines.length * 14;
+    if (cursorY > pageH - 40) {
+      doc.addPage();
+      cursorY = 40;
+    }
+  });
+
 
   // 6️⃣ Save
   doc.save('preachpoint_commentary.pdf');
