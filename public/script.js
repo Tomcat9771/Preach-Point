@@ -260,7 +260,8 @@ async function onGenerate() {
   }
 
   // ③ Fetch & render AI commentary
-  $('commentary').textContent = ''; // ensure spinner remains until ready
+  // keep showing the spinner until the commentary comes back
+  $('commentary').innerHTML = '<div class="spinner"></div>';
   try {
     const payload2 = { book: bookName, startChapter: sCh, startVerse: sV, endChapter: eCh, endVerse: eV, tone, level: lvl, lang };
     const res2     = await fetch('/api/commentary', {
