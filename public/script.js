@@ -202,6 +202,7 @@ function onReset() {
   // 2) Clear the displayed text
   $('verses').textContent     = '';
   $('commentary').textContent = '';
+  $('prayer').textContent     = '';
 
   // 3) (Optional) Repopulate tone & level to defaults for current language
   populateTone();
@@ -276,7 +277,7 @@ async function onGenerate() {
   } catch (e) {
     $('commentary').textContent = `Error: ${e.message}`;
   }
-}
+
 // ④ Fetch & render AI prayer
   try {
     const payload3 = {
@@ -298,7 +299,7 @@ async function onGenerate() {
   } catch (e) {
     $('prayer').textContent = `Error: ${e.message}`;
   }
-
+}
 // ─── Copy to clipboard helper ────────────────────────────────────
 function onCopy() {
   const loc = $('lang').value;
