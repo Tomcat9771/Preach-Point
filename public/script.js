@@ -292,57 +292,74 @@ function onCopy() {
 
 
 /**
- * Generates a PDF of the current commentary view.
+ * Generate a clean, Acrobat-friendly PDF using only jsPDF core.
  */
-function onDownloadPDF() {
-  const loc  = $('lang').value;
-  const vh   = headingLabels[loc].verses;
-  const ch   = headingLabels[loc].commentary;
-  const tmp  = document.createElement('div');
-
-  // Style wrapper for PDF
-  tmp.style.padding    = '40px';
-  tmp.style.background = 'white';
-  tmp.style.color      = 'black';
-
-  // Build the HTML to render into PDF
-  tmp.innerHTML = `
-    <div style="text-align:center; margin-bottom:2rem;">
-      <img
-        src="/logo.png"
-        style="max-width:200px; height:auto; display:block; margin:0 auto 1rem;"
-        alt="Preach Point Logo"
-      />
-    </div>
-    <div style="text-align:center; margin-bottom:1rem; font-size:1.2em; line-height:1.1;">
-      <strong>${labels[loc].tone}:</strong> ${$('tone').value}
-      &nbsp;&nbsp;
-      <strong>${labels[loc].level}:</strong> ${$('level').value}
-    </div>
-    <hr/>
-    <h2 style="font-size:3.6em; text-align:center;">${vh}</h2>
-    <pre style="font-size:1.1em; line-height:1.4; white-space:pre-wrap;">
-${$('verses').textContent}
-    </pre>
-    <h2 style="font-size:3.6em; text-align:center;">${ch}</h2>
-    <pre style="font-size:1.1em; line-height:1.4; white-space:pre-wrap;">
-${$('commentary').textContent}
-    </pre>
-  `;  // <-- closing back‐tick for template literal
-
-  document.body.appendChild(tmp);
-
+async function onDownloadPDF() {
+  // 1️⃣ Grab jsPDF
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ unit: 'pt', format: 'a4' });
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.width;
+  const pageH = doc.internal.pageSize.height;
+  let cursorY = 40;
 
-  pdf.html(tmp, {
-    x: 20,
-    y: 20,
-    width: pdf.internal.pageSize.getWidth() - 40,
-    windowWidth: document.body.scrollWidth,
-    callback: () => {
-      pdf.save('preachpoint_commentary.pdf');
-      document.body.removeChild(tmp);
+  // 2️⃣ Draw the logo (centered)
+  const imgEl = document.getElementById('logo');
+  if (imgEl) {
+    // Draw it to a canvas so we can grab a DataURL
+    const canvas = document.createElement('canvas');
+    canvas.width  = imgEl.naturalWidth;
+    canvas.height = imgEl.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(imgEl, 0, 0);
+    const dataUrl = canvas.toDataURL('image/png');
+    const imgProps = doc.getImageProperties(dataUrl);
+    const imgW = 100;  // desired width
+    const imgH = (imgProps.height * imgW) / imgProps.width;
+    doc.addImage(dataUrl, 'PNG', (pageW - imgW)/2, cursorY, imgW, imgH);
+    cursorY += imgH + 20;
+  }
+
+  // 3️⃣ Tone & Level line
+  const loc = document.getElementById('lang').value;
+  doc.setFont('helvetica', 'bold').setFontSize(12);
+  doc.text(`Tone: ${$('tone').value}`, 40, cursorY);
+  doc.text(`Level: ${$('level').value}`, pageW - 40, cursorY, { align: 'right' });
+  cursorY += 20;
+
+  // 4️⃣ Verses section
+  doc.setFont('helvetica', 'normal').setFontSize(11);
+  doc.setTextColor(0,0,0);
+  doc.text(headingLabels[loc].verses, pageW/2, cursorY, { align: 'center' });
+  cursorY += 20;
+  const verses = $('verses').textContent.split('\n');
+  verses.forEach(line => {
+    const lines = doc.splitTextToSize(line, pageW - 80);
+    doc.text(lines, 40, cursorY);
+    cursorY += lines.length * 14;
+    if (cursorY > pageH - 40) {
+      doc.addPage();
+      cursorY = 40;
     }
   });
+  cursorY += 20;
+
+  // 5️⃣ Commentary section
+  doc.setFont('helvetica', 'bold').setFontSize(12);
+  doc.text(headingLabels[loc].commentary, pageW/2, cursorY, { align: 'center' });
+  cursorY += 20;
+  doc.setFont('helvetica', 'normal').setFontSize(11);
+  const comm = $('commentary').textContent.split('\n');
+  comm.forEach(line => {
+    const lines = doc.splitTextToSize(line, pageW - 80);
+    doc.text(lines, 40, cursorY);
+    cursorY += lines.length * 14;
+    if (cursorY > pageH - 40) {
+      doc.addPage();
+      cursorY = 40;
+    }
+  });
+
+  // 6️⃣ Save
+  doc.save('preachpoint_commentary.pdf');
+}
 }  // <-- closing brace for function
