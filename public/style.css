@@ -89,17 +89,17 @@ button:hover {
   margin-top: 1rem;
   color: white;
 }
-/* Position Download as PDF button to the right */
 .actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;   /* copy left, download right */
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
+   display: flex;
+  /* no need for space-between once buttons flex equally */
+   gap: 1rem;
+   margin-top: 1.5rem;
+ }
 
 .actions button {
   margin: 0;                   /* reset any button margins */
+  flex: 1;                     /* make each button share the same width */
+  text-align: center;          /* center the label text */
 }
 
 @media (max-width: 600px) {
