@@ -239,8 +239,8 @@ async function onGenerate() {
   }
 
   // ① Show spinners
-  $('verses').innerHTML     = '<div class="spinner"></div>';
-  $('commentary').innerHTML = '<div class="spinner"></div>';
+  $('verses').innerHTML     = '<div class="spinner--dual-ring"></div>';
+  $('commentary').innerHTML = '<div class="spinner--dual-ring"></div>';
 
   // ② Fetch & render verses (or translation)
   try {
