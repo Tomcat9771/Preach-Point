@@ -35,9 +35,19 @@ const labels = {
   af: { lang:"Taal",    book:"Boek", chapter:"Begin Hoofstuk", verse:"Begin Vers",      endChapter:"Eind Hoofstuk",   endVerse:"Eind Vers",       tone:"Toon",  level:"Uitlegvlak" }
 };
 const buttonLabels = {
-  en: { generate:"Generate Commentary", copy:"Copy to Clipboard", pdf:"Download as PDF" },
-  af: { generate:"Genereer Kommentaar", copy:"Kopieer na klembord", pdf:"Laai af as PDF" }
-};
+  en: {
+    generate: "Generate Commentary",
+    copy:     "Copy to Clipboard",
+    reset:    "Reset Fields",
+    pdf:      "Download as PDF"
+  },
+  af: {
+    generate: "Genereer Kommentaar",
+    copy:     "Kopieer na klembord",
+    reset:    "Herstel Velde",
+    pdf:      "Laai af as PDF"
+  }
+ };
 const headingLabels = {
   en: { verses:"Bible Text", commentary:"Commentary" },
   af: { verses:"Bybelteks", commentary:"Kommentaar" }
@@ -48,6 +58,7 @@ function $(id) { return document.getElementById(id); }
 
 // ─── Populate the book <select> from /api/books ─────────────────
 async function populateBooks() {
+  const loc = $('lang').value;
   let data;
   try {
     data = await safeFetchJson('/api/books');
@@ -57,8 +68,12 @@ async function populateBooks() {
   }
   const bookSelect = $('book');
   bookSelect.innerHTML = '';
-  bookSelect.append(new Option('— Select a Book —', ''));
-  if ($('lang').value === 'af') {
+  // localized placeholder:
+  const placeholder = loc === 'af'
+    ? '---Kies n boek---'
+    : '— Select a Book —';
+  bookSelect.append(new Option(placeholder, ''));
+    if ($('lang').value === 'af') {
     // show Afrikaans names, but keep the value = English key
     data.books.forEach((engName, i) => {
       bookSelect.append(new Option(afBookNames[i], engName));
@@ -151,6 +166,7 @@ function updateButtonsAndHeadings(loc) {
   // buttonLabels and headingLabels are your globals defined earlier
   $('generate-btn').textContent      = buttonLabels[loc].generate;
   $('copy-btn').textContent          = buttonLabels[loc].copy;
+  $('reset-btn').textContent         = buttonLabels[loc].reset;
   $('download-pdf').textContent      = buttonLabels[loc].pdf;
   $('verses-heading').textContent     = headingLabels[loc].verses;
   $('commentary-heading').textContent = headingLabels[loc].commentary;
