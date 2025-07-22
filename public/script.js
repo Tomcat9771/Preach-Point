@@ -176,6 +176,23 @@ function updateUI() {
   populateTone();
   populateLevels();
 }
+function onReset() {
+  // 1) Clear all selects/dropdowns
+  ['book','chapter','end-chapter','verse','end-verse'].forEach(id => {
+    $(id).value = '';
+  });
+
+  // 2) Clear the displayed text
+  $('verses').textContent     = '';
+  $('commentary').textContent = '';
+
+  // 3) (Optional) Repopulate tone & level to defaults for current language
+  populateTone();
+  populateLevels();
+
+  // 4) Refresh labels/buttons
+  updateUI();
+}
 
 // ─── Wire up event listeners ─────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
@@ -185,6 +202,7 @@ window.addEventListener('DOMContentLoaded', () => {
   $('chapter').addEventListener('change', populateVerses);
   $('generate-btn').addEventListener('click', onGenerate);
   $('copy-btn').addEventListener('click', onCopy);
+  $('reset-btn').addEventListener('click', onReset);
   $('download-pdf').addEventListener('click', onDownloadPDF);
 });
 
